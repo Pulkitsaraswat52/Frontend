@@ -1,0 +1,113 @@
+/* Your existing CSS */
+.container {
+  max-width: 420px;
+  margin: auto;
+  padding: 2.5rem;
+  font-family: 'Poppins', sans-serif;
+  text-align: center;
+  background: linear-gradient(135deg, #f0f8ff, #e6f7ff);
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.heading {
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #f70f0f;
+}
+
+.inputBox {
+  margin-bottom: 1.5rem;
+}
+
+.usernameInput {
+  width: 100%;
+  padding: 0.7rem;
+  font-size: 1rem;
+  border: 2px solid #7be2df;
+  border-radius: 8px;
+  transition: 0.3s ease-in-out;
+}
+
+.usernameInput:focus {
+  outline: none;
+  border-color: #e93c11;
+  box-shadow: 0 0 8px rgba(236, 189, 157, 0.3);
+}
+
+.frameCard {
+  border: 2px solid #ccc;
+  padding: 1.2rem;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+}
+
+.cameraBox, .previewBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.webcam, .image {
+  width: 320px;
+  height: 240px;
+  margin-bottom: 1rem;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 2px solid #d1d1d1;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.button {
+  padding: 0.6rem 1.2rem;
+  margin-top: 0.8rem;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ebf179, #b8d65e);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.button:hover {
+  background: linear-gradient(135deg, #f91313, #8d94f2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: scale(1.05);
+}
+
+.encodingBox {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f9f9ff;
+  border: 1px dashed #eecb8b;
+  border-radius: 10px;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+/* Additional CSS for the loading screen (to replicate Tailwind classes) */
+
+.flex {
+  display: flex;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.min-h-screen {
+  min-height: 100vh; /* full viewport height */
+}
+
+.text-lg {
+  font-size: 1.125rem; /* equivalent to Tailwind's text-lg */
+}
+
