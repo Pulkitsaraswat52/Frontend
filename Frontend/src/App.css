@@ -1,8 +1,10 @@
-/* Your existing CSS */
+/* ================================
+   Core Container & Layout
+   ================================ */
 .container {
-  max-width: 420px;
+  max-width: 500px;
   margin: auto;
-  padding: 2.5rem;
+  padding: 2rem;
   font-family: 'Poppins', sans-serif;
   text-align: center;
   background: linear-gradient(135deg, #f0f8ff, #e6f7ff);
@@ -10,6 +12,21 @@
   box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 
+.app-container {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+.login-container {
+  text-align: center;
+  padding: 50px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ================================
+   Headings
+   ================================ */
 .heading {
   margin-bottom: 1.5rem;
   font-size: 1.8rem;
@@ -17,6 +34,36 @@
   color: #f70f0f;
 }
 
+/* ================================
+   Frames & Camera
+   ================================ */
+.frameCard {
+  border: 2px solid #ccc;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+}
+
+.cameraBox, .previewBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.webcam, .image {
+  width: 100%;
+  height: auto;
+  margin-bottom: 1rem;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 2px solid #d1d1d1;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ================================
+   Input Styling
+   ================================ */
 .inputBox {
   margin-bottom: 1.5rem;
 }
@@ -24,6 +71,7 @@
 .usernameInput {
   width: 100%;
   padding: 0.7rem;
+  margin-bottom: 10px;
   font-size: 1rem;
   border: 2px solid #7be2df;
   border-radius: 8px;
@@ -36,36 +84,13 @@
   box-shadow: 0 0 8px rgba(236, 189, 157, 0.3);
 }
 
-.frameCard {
-  border: 2px solid #ccc;
-  padding: 1.2rem;
-  border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.05);
-}
-
-.cameraBox, .previewBox {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.webcam, .image {
-  width: 320px;
-  height: 240px;
-  margin-bottom: 1rem;
-  border-radius: 10px;
-  object-fit: cover;
-  border: 2px solid #d1d1d1;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-.button {
+/* ================================
+   Buttons
+   ================================ */
+.button, .btn {
   padding: 0.6rem 1.2rem;
-  margin-top: 0.8rem;
+  margin: 0.5rem;
   cursor: pointer;
-  background: linear-gradient(135deg, #ebf179, #b8d65e);
-  color: white;
   border: none;
   border-radius: 6px;
   font-size: 1rem;
@@ -73,12 +98,89 @@
   transition: all 0.3s ease;
 }
 
-.button:hover {
-  background: linear-gradient(135deg, #f91313, #8d94f2);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+.btn-green {
+  background-color: #4caf50;
+  color: white;
+}
+
+.btn-green:hover {
+  background-color: #45a049;
   transform: scale(1.05);
 }
 
+.btn-red {
+  background-color: #f44336;
+  color: white;
+}
+
+.btn-red:hover {
+  background-color: #da190b;
+  transform: scale(1.05);
+}
+
+.button:hover {
+  background: linear-gradient(135deg, #f91313, #8d94f2);
+  transform: scale(1.05);
+}
+
+/* ================================
+   Google Login Box
+   ================================ */
+.google-login-box {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px dashed #ccc;
+}
+
+/* ================================
+   Tabs
+   ================================ */
+.tab-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 12px;
+  cursor: pointer;
+  border: none;
+  font-size: 16px;
+  background-color: #ddd;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.tab-btn.active {
+  background-color: #4caf50;
+  color: white;
+  transform: scale(1.05);
+}
+
+.tab-content {
+  margin-top: 20px;
+}
+
+/* ================================
+   User Info
+   ================================ */
+.user-info {
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 10px;
+}
+
+.profile-pic {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin: 10px;
+}
+
+/* ================================
+   Encoding Box
+   ================================ */
 .encodingBox {
   margin-top: 1.5rem;
   padding: 1rem;
@@ -89,25 +191,11 @@
   font-size: 0.95rem;
 }
 
-/* Additional CSS for the loading screen (to replicate Tailwind classes) */
-
-.flex {
-  display: flex;
-}
-
-.justify-center {
-  justify-content: center;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.min-h-screen {
-  min-height: 100vh; /* full viewport height */
-}
-
-.text-lg {
-  font-size: 1.125rem; /* equivalent to Tailwind's text-lg */
-}
-
+/* ================================
+   Utility Classes
+   ================================ */
+.flex { display: flex; }
+.justify-center { justify-content: center; }
+.items-center { align-items: center; }
+.min-h-screen { min-height: 100vh; }
+.text-lg { font-size: 1.125rem; }

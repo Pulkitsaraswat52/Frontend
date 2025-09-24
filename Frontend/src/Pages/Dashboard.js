@@ -1,3 +1,4 @@
+// src/pages/Dashboard.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
@@ -9,25 +10,55 @@ import { faceLogin } from "../api";
 function Dashboard() {
   const { user, setUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [tableData, setTableData] = useState([]);
-  const [newEntry, setNewEntry] = useState("");
-  const [faceEntries, setFaceEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  // normalize role string safely
-  const roleKey =
-    typeof user?.role === "string" ? user.role.toLowerCase() : "";
+  const [tableData, setTableData] = useState([]);
+  const [faceEntries, setFaceEntries] = useState([]);
+  const [newEntry, setNewEntry] = useState("");
+  const [loadingEntries, setLoadingEntries] = useState(true);
+
+  // -------------------- FETCH ENTRIES --------------------
+  useEffect(() => {
+    if (!user) return;
+    const fetchEntries = async () => {
+      try {
+        const res = await axios.get("http://localhost:8000/entries/", {
+          withCredentials: true,
+        });
+        setTableData(res.data || []);
+      } catch (err) {
+        console.error("Error fetching entries:", err);
+      } finally {
+        setLoadingEntries(false);
+      }
+    };
+    fetchEntries();
+  }, [user]);
+
+  // -------------------- FETCH FACES --------------------
+  useEffect(() => {
+    const fetchFaces = async () => {
+      try {
+        const res = await axios.get("http://localhost:8000/faces/", {
+          withCredentials: true,
+        });
+        setFaceEntries(res.data || []);
+      } catch (err) {
+        console.error("Error fetching face entries:", err);
+      }
+    };
+    fetchFaces();
+  }, []);
 
   // -------------------- FACE LOGIN --------------------
   const handleFaceLogin = async (imageBlob) => {
+    if (user?.email) {
+      toast.info("⚠️ Google users cannot login via face.");
+      return;
+    }
     try {
       const res = await faceLogin(imageBlob);
       if (res?.success) {
-        // backend must send: { success, username, role: "Admin" }
-        setUser({
-          username: res.username,
-          role: res.role, // keep role name, not id
-        });
+        setUser({ username: res.username, role: res.role });
         toast.success(`✅ Welcome, ${res.username}!`);
         navigate("/dashboard");
       } else {
@@ -38,41 +69,6 @@ function Dashboard() {
       toast.error("❌ Face login failed!");
     }
   };
-
-  // -------------------- FETCH ENTRIES --------------------
-  useEffect(() => {
-    const fetchEntries = async () => {
-      if (!user) return;
-      try {
-        const res = await axios.get("http://localhost:8000/entries/", {
-          withCredentials: true,
-        });
-        setTableData(res.data || []);
-      } catch (err) {
-        console.error("Error fetching entries:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchEntries();
-  }, [user]);
-
-  // -------------------- FETCH FACES --------------------
-  useEffect(() => {
-    const fetchFaces = async () => {
-      try {
-        const res = await fetch("http://localhost:8000/faces/", {
-          credentials: "include",
-        });
-        const data = await res.json();
-        setFaceEntries(data);
-      } catch (err) {
-        console.error("Error fetching face entries:", err);
-        setFaceEntries([]);
-      }
-    };
-    fetchFaces();
-  }, []);
 
   // -------------------- ADD ENTRY --------------------
   const handleAdd = async () => {
@@ -124,18 +120,19 @@ function Dashboard() {
     }
   };
 
+  // -------------------- LOGOUT --------------------
   const handleLogout = async () => {
     await logout();
     toast.info("🚪 Logged out.");
     navigate("/");
   };
 
+  const roleKey = typeof user?.role === "string" ? user.role.toLowerCase() : "";
   const visibleEntries =
     roleKey === "admin"
       ? tableData
       : tableData.filter((entry) => entry.username === user?.username);
 
-  // -------------------- RENDER --------------------
   return (
     <div className="container">
       <h2 className="heading">👤 Dashboard</h2>
@@ -152,10 +149,23 @@ function Dashboard() {
             <p>
               Username: <strong>{user.username}</strong>
             </p>
+            {user.email && (
+              <p>
+                Email: <strong>{user.email}</strong>
+              </p>
+            )}
+            {user.picture && (
+              <img
+                src={user.picture}
+                alt="profile"
+                width="50"
+                style={{ borderRadius: "50%" }}
+              />
+            )}
             <p>
               Role:{" "}
               {user.role ? (
-                <strong>{user.role}</strong> // <-- FIXED HERE
+                <strong>{user.role}</strong>
               ) : (
                 <span style={{ color: "red" }}>Missing</span>
               )}
@@ -175,25 +185,16 @@ function Dashboard() {
                 value={newEntry}
                 onChange={(e) => setNewEntry(e.target.value)}
               />
-              <button
-                onClick={handleAdd}
-                className="button"
-                style={{ marginLeft: 8 }}
-              >
+              <button onClick={handleAdd} className="button" style={{ marginLeft: 8 }}>
                 ➕ Add Entry
               </button>
             </div>
           )}
 
-          {loading ? (
+          {loadingEntries ? (
             <p>Loading entries...</p>
           ) : (
-            <table
-              border="1"
-              cellPadding="8"
-              cellSpacing="0"
-              style={{ width: "100%", borderCollapse: "collapse" }}
-            >
+            <table border="1" cellPadding="8" cellSpacing="0" style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
                   <th>ID</th>
@@ -217,10 +218,7 @@ function Dashboard() {
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan={roleKey === "admin" ? 4 : 3}
-                      style={{ textAlign: "center" }}
-                    >
+                    <td colSpan={roleKey === "admin" ? 4 : 3} style={{ textAlign: "center" }}>
                       No entries found.
                     </td>
                   </tr>
@@ -231,12 +229,7 @@ function Dashboard() {
 
           {/* FACES TABLE */}
           <h3 style={{ marginTop: "2rem" }}>🧑‍🦱 Registered Faces</h3>
-          <table
-            border="1"
-            cellPadding="8"
-            cellSpacing="0"
-            style={{ width: "100%", borderCollapse: "collapse" }}
-          >
+          <table border="1" cellPadding="8" cellSpacing="0" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
                 <th>ID</th>
@@ -279,7 +272,6 @@ function Dashboard() {
   );
 }
 
-// -------------------- TABLE ROW --------------------
 const TableRow = ({ id, username, data, isAdmin, onDelete, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(data);
@@ -296,10 +288,7 @@ const TableRow = ({ id, username, data, isAdmin, onDelete, onUpdate }) => {
       <td>{username}</td>
       <td>
         {isEditing ? (
-          <input
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-          />
+          <input value={editValue} onChange={(e) => setEditValue(e.target.value)} />
         ) : (
           data
         )}

@@ -1,9 +1,16 @@
+// src/pages/HomePage.jsx
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../auth/useAuth";
 import Webcam from "react-webcam";
 import { faceLogin, registerUser } from "../api";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
+
+const clientId =
+  process.env.REACT_APP_GOOGLE_CLIENT_ID ||
+  "459111757593-hpnpd591itdubpqafgibljolavq304bq.apps.googleusercontent.com";
 
 function HomePage() {
   const webcamRef = useRef(null);
@@ -17,8 +24,9 @@ function HomePage() {
   const [registerData, setRegisterData] = useState({
     username: "",
     password: "",
-    role: "", // default
+    role: "employee",
   });
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   // ----------------------------
   // Capture Image Helper
@@ -32,10 +40,17 @@ function HomePage() {
   };
 
   // ----------------------------
-  // Face Verification (Periodic)
+  // Face Verification
   // ----------------------------
   const captureAndVerify = useCallback(async () => {
-    if (!webcamRef.current || isVerifying || isLoggedIn || showRegisterForm) return;
+    if (
+      !webcamRef.current ||
+      isVerifying ||
+      isLoggedIn ||
+      showRegisterForm ||
+      googleLoading
+    )
+      return;
 
     const blob = await captureImage();
     if (!blob) return;
@@ -58,10 +73,10 @@ function HomePage() {
     } finally {
       setIsVerifying(false);
     }
-  }, [navigate, setUser, isVerifying, isLoggedIn, showRegisterForm]);
+  }, [navigate, setUser, isVerifying, isLoggedIn, showRegisterForm, googleLoading]);
 
   // ----------------------------
-  // Handle Registration
+  // Registration
   // ----------------------------
   const handleRegister = async () => {
     if (!registerData.username || !registerData.password) {
@@ -80,24 +95,21 @@ function HomePage() {
         registerData.username,
         registerData.password,
         blob,
-        registerData.role.toLowerCase() // ✅ Normalize role here
+        registerData.role.toLowerCase()
       );
 
       if (res?.success) {
         toast.success(`🎉 Registered ${registerData.username} successfully!`);
-
-        // Auto login after register
         setUser({
           username: res.username,
-          role: res.role, // backend sends "admin" or "employee"
+          role: res.role,
         });
         setIsLoggedIn(true);
         setIsCameraOn(false);
         navigate("/dashboard");
 
-        // Reset form
         setShowRegisterForm(false);
-        setRegisterData({ username: "", password: "", role: "" });
+        setRegisterData({ username: "", password: "", role: "employee" });
       } else {
         toast.error(`❌ ${res.error || "Registration failed"}`);
       }
@@ -108,105 +120,157 @@ function HomePage() {
   };
 
   // ----------------------------
-  // Start camera automatically
+  // Google Login (NO API CALL)
+  // ----------------------------
+  const handleGoogleSuccess = (credentialResponse) => {
+    setGoogleLoading(true);
+    setIsCameraOn(false); // Stop webcam immediately
+
+    try {
+      const token = credentialResponse.credential;
+      const decoded = jwtDecode(token);
+      console.log("Google user:", decoded);
+
+      // Store user locally without backend
+      setUser({
+        username: decoded.name,
+        email: decoded.email,
+        picture: decoded.picture,
+      });
+      localStorage.setItem("google_user", JSON.stringify(decoded));
+
+      toast.success("✅ Google Login Successful!");
+      setIsLoggedIn(true);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Google login error:", err);
+      toast.error("❌ Google login failed!");
+      setIsCameraOn(true);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error("❌ Google Login Failed. Try again.");
+    setIsCameraOn(true); // restart webcam if google login fails
+  };
+
+  // ----------------------------
+  // Auto camera start
   // ----------------------------
   useEffect(() => {
-    setIsCameraOn(true);
-  }, []);
+    if (!isLoggedIn && !googleLoading) setIsCameraOn(true);
+  }, [isLoggedIn, googleLoading]);
 
   // ----------------------------
   // Periodic scanning
   // ----------------------------
   useEffect(() => {
     if (!isCameraOn || isVerifying || isLoggedIn || showRegisterForm) return;
-
     const interval = setInterval(() => captureAndVerify(), 3000);
     return () => clearInterval(interval);
   }, [isCameraOn, isVerifying, isLoggedIn, showRegisterForm, captureAndVerify]);
 
   return (
-    <div className="container">
-      <h2 className="heading">📸 Face Login / Registration</h2>
-      <div className="frameCard">
-        {isCameraOn && !isLoggedIn ? (
-          <>
-            <Webcam
-              ref={webcamRef}
-              screenshotFormat="image/jpeg"
-              videoConstraints={{ facingMode: "user" }}
-              style={{
-                width: "100%",
-                borderRadius: "10px",
-                border: "2px solid #333",
-              }}
-            />
-            <p style={{ marginTop: "10px" }}>
-              {isVerifying
-                ? "🔍 Scanning for your face..."
-                : showRegisterForm
-                ? "📸 Ready to capture your registration photo"
-                : "Align your face with the camera"}
-            </p>
+    <GoogleOAuthProvider clientId={clientId}>
+      <div className="container">
+        <h2 className="heading">🔐 Face & Google Login</h2>
 
-            {/* Registration Form */}
-            {showRegisterForm && (
-              <div style={{ marginTop: "15px" }}>
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={registerData.username}
-                  onChange={(e) =>
-                    setRegisterData({ ...registerData, username: e.target.value })
-                  }
-                  style={{ margin: "5px", padding: "5px" }}
+        {!isLoggedIn ? (
+          <div className="frameCard">
+            {/* Face Login Section */}
+            {isCameraOn && !isLoggedIn && !googleLoading ? (
+              <>
+                <Webcam
+                  ref={webcamRef}
+                  screenshotFormat="image/jpeg"
+                  videoConstraints={{ facingMode: "user" }}
+                  className="webcam"
                 />
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={registerData.password}
-                  onChange={(e) =>
-                    setRegisterData({ ...registerData, password: e.target.value })
-                  }
-                  style={{ margin: "5px", padding: "5px" }}
-                />
-                <select
-                  value={registerData.role}
-                  onChange={(e) =>
-                    setRegisterData({ ...registerData, role: e.target.value })
-                  }
-                  style={{ margin: "5px", padding: "5px" }}
-                >
-                  <option value="employee">employee</option>
-                  <option value="admin">admin</option>
-                </select>
-                <button
-                  onClick={handleRegister}
-                  className="button"
-                  style={{ margin: "5px" }}
-                >
-                  ✅ Confirm Register
+                <p>
+                  {isVerifying
+                    ? "🔍 Scanning for your face..."
+                    : showRegisterForm
+                    ? "📸 Capture your registration photo"
+                    : "Align your face with the camera"}
+                </p>
+
+                {/* Registration Form */}
+                {showRegisterForm && (
+                  <div className="register-form">
+                    <input
+                      type="text"
+                      placeholder="Username"
+                      value={registerData.username}
+                      onChange={(e) =>
+                        setRegisterData({ ...registerData, username: e.target.value })
+                      }
+                      className="usernameInput"
+                    />
+                    <input
+                      type="password"
+                      placeholder="Password"
+                      value={registerData.password}
+                      onChange={(e) =>
+                        setRegisterData({ ...registerData, password: e.target.value })
+                      }
+                      className="usernameInput"
+                    />
+                    <select
+                      value={registerData.role}
+                      onChange={(e) =>
+                        setRegisterData({ ...registerData, role: e.target.value })
+                      }
+                      className="usernameInput"
+                    >
+                      <option value="employee">Employee</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <button onClick={handleRegister} className="button">
+                      ✅ Confirm Register
+                    </button>
+                  </div>
+                )}
+
+                <div>
+                  <button
+                    className="button"
+                    onClick={() => setShowRegisterForm(!showRegisterForm)}
+                  >
+                    {showRegisterForm ? "❌ Cancel" : "📝 Register New User"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              !googleLoading && (
+                <button className="button" onClick={() => setIsCameraOn(true)}>
+                  🚀 Start Camera
                 </button>
-              </div>
+              )
             )}
 
-            <div style={{ marginTop: "10px" }}>
-              <button
-                className="button"
-                onClick={() => setShowRegisterForm(!showRegisterForm)}
-              >
-                {showRegisterForm ? "❌ Cancel" : "📝 Register New User"}
-              </button>
+            {/* Google Login Section */}
+            <div className="google-login-box">
+              <h3>Or Login with Google</h3>
+              {googleLoading ? (
+                <p>Loading...</p>
+              ) : (
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  theme="outline"
+                  size="large"
+                  text="signin_with"
+                />
+              )}
             </div>
-          </>
-        ) : !isLoggedIn ? (
-          <button className="button" onClick={() => setIsCameraOn(true)}>
-            🚀 Start Camera
-          </button>
+          </div>
         ) : (
           <p>✅ Logged in successfully! Redirecting...</p>
         )}
       </div>
-    </div>
+    </GoogleOAuthProvider>
   );
 }
 
